@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, StreamingResponse
 import yt_dlp
 import requests
+import os  # Railway portunu sistemden okumak için ekledik
 
 app = FastAPI(title="Universal Media Downloader")
 
@@ -97,7 +98,6 @@ async def read_item():
                 const card = document.createElement('div');
                 card.className = "bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-between items-center space-y-3 shadow";
 
-                // DIKKAT: Yasaklı linki aşmak için indirme butonunu bizim proxy endpoint'imize yönlendiriyoruz
                 const proxyUrl = `/api/proxy?stream_url=${encodeURIComponent(url)}`;
 
                 let previewHtml = '';
@@ -121,16 +121,15 @@ async def read_item():
     </html>
     """
 
-# 2. PROXY KATMANI (TikTok/Instagram Engellerini Aşmak İçin)
+# 2. PROXY KATMANI
 @app.get("/api/proxy")
 async def proxy_stream(stream_url: str = Query(..., description="Doğrudan medya url'si")):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://www.tiktok.com/'  # TikTok'u kandırmak için referans ekliyoruz
+        'Referer': 'https://www.tiktok.com/'
     }
     
     def iterfile():
-        # Videoyu parça parça (chunk) indirip eşzamanlı olarak tarayıcıya yolluyoruz
         with requests.get(stream_url, headers=headers, stream=True) as r:
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192):
@@ -183,3 +182,11 @@ async def get_download_url(url: str = Query(..., description="Medya URL'si")):
                 }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# --- BURASI CRITICAL EKLEME ---
+# Kod doğrudan çalıştırıldığında Railway'in atadığı portu otomatik yakalar
+if __name__ == "__main__":
+    import uvicorn
+    # Railway çevre değişkenlerinden PORT'u okur, bulamazsa varsayılan 8081'i açar
+    port = int(os.environ.get("PORT", 8081))
+    uvicorn.run(app, host="0.0.0.0", port=port)
