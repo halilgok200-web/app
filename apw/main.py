@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, StreamingResponse
 import yt_dlp
 import requests
-import os  # Railway portunu sistemden okumak için ekledik
+import os
 
 app = FastAPI(title="Universal Media Downloader")
 
@@ -41,8 +41,7 @@ async def read_item():
 
             <div id="result" class="hidden space-y-4">
                 <h3 id="mediaTitle" class="font-bold text-lg text-slate-200 line-clamp-2"></h3>
-                <div id="mediaContainer" class="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto p-2 border border-slate-700 rounded-xl bg-slate-900">
-                    </div>
+                <div id="mediaContainer" class="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto p-2 border border-slate-700 rounded-xl bg-slate-900"></div>
             </div>
         </div>
 
@@ -183,10 +182,9 @@ async def get_download_url(url: str = Query(..., description="Medya URL'si")):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# --- BURASI CRITICAL EKLEME ---
-# Kod doğrudan çalıştırıldığında Railway'in atadığı portu otomatik yakalar
+# Ana tetikleyici
 if __name__ == "__main__":
     import uvicorn
-    # Railway çevre değişkenlerinden PORT'u okur, bulamazsa varsayılan 8081'i açar
+    # Railway'in PORT değişkenini dinamik yakala, yoksa 8000'den kaldır
     port = int(os.environ.get("PORT", 8081))
     uvicorn.run(app, host="0.0.0.0", port=port)
